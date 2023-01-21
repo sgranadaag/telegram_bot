@@ -51,3 +51,65 @@ def register_account(user_id):
         db.session.commit()
         return True
     return False
+
+
+def earn_money(user_id, amount):
+    if amount <= 0:
+        return False
+    control = update_account(user_id, amount)
+    if not control:
+        return False
+    earn = Earning(
+        amount,
+        datetime.now(),
+        user_id
+    )
+    db.session.add(earn)
+    db.session.commit()
+    return True
+
+
+def update_account(user_id, amount):
+    account = db.session.query(Account).get(user_id)
+    db.session.commit()
+    if not account:
+        return False
+    account.balance = account.balance + amount
+    db.session.commit()
+    return True
+
+
+def remove_earning(user_id, index):
+    record = db.session.query(Earning).filter(
+        Earning.accounts_id == user_id
+    ).filter(
+        Earning.id == index
+    ).first()
+    if not record:
+        db.session.rollback()
+        return False
+    control = update_account(user_id, record.amount * -1)
+    if not control:
+        db.session.rollback()
+        return False
+    db.session.delete(record)
+    db.session.commit()
+    return True
+
+
+def remove_spending(user_id, index):
+    record = db.session.query(Spending).filter(
+        Spending.accounts_id == user_id
+    ).filter(
+        Spending.id == index
+    ).first()
+    if not record:
+        db.session.rollback()
+        return False
+    control = update_account(user_id, record.amount)
+    if not control:
+        db.session.rollback()
+        return False
+    db.session.delete(record)
+    db.session.commit()
+    return True

@@ -48,15 +48,29 @@ def on_command_about(message):
 #########################################################
 @bot.message_handler(regexp=r"^(gane|gané|g) ([+-]?([0-9]*[.])?[0-9]+)$")
 def on_earn_money(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    parts = re.match(
+        r"^(gane|gané|g) ([+-]?([0-9]*[.])?[0-9]+)$",
+        message.text,
+        flags=re.IGNORECASE
+    )
+    amount = float(parts[2])
+    control = logic.earn_money(message.from_user.id, amount)
+    bot.reply_to(
+        message,
+        f"\U0001F4B0 ¡Dinero ganado!: {amount}" if control == True
+        else "\U0001F4A9 Tuve problemas registrando la transacción, ejecuta /start y vuelve a intentarlo"
+    )
 
-    pass
 #########################################################
 
 
-@bot.message_handler(regexp=r"^(gaste|gasté|gg) ([+-]?([0-9]*[.])?[0-9]+)$")
+@bot.message_handler(regexp=r"^(compañeros)$")
 def on_spend_money(message):
-
-    pass
+    bot.reply_to(
+        message,
+        "Señor Gallo y Fredy lo mejorsito"
+    )
 #########################################################
 
 
@@ -84,8 +98,29 @@ def on_get_balance(message):
 
 @bot.message_handler(regexp=r"^(remover|r) (ganancia|g|gasto|gg) ([0-9]+)$")
 def on_remove_record(message):
-    pass
-#########################################################
+    bot.send_chat_action(message.chat.id, 'typing')
+    parts = re.match(
+        r"^(remover|r) (ganancia|g|gasto|gg) ([0-9]+)$",
+        message.text,
+        flags=re.IGNORECASE)
+    record_type = parts[2]
+    index = int(parts[3])
+    if record_type not in ["ganancia", "g", "gasto", "gg"]:
+        bot.reply_to(
+            message, f"Error, tipo de registro inválido:  {record_type}")
+        return
+    if index < 0:
+        bot.reply_to(message, f"Error, índice inválido: {index}")
+        return
+    response = False
+    if record_type == "ganancia" or record_type == "g":
+        response = logic.remove_earning(message.from_user.id, index)
+    elif record_type == "gasto" or record_type == "gg":
+        response = logic.remove_spending(message.from_user.id, index)
+    if response:
+        bot.reply_to(message, f"Registro removido: {record_type}, {index}")
+    else:
+        bot.reply_to(message, f"No se pudo remover el registro: {index}")
 
 
 @bot.message_handler(func=lambda message: True)
